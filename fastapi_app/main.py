@@ -1,0 +1,34 @@
+# main.py (FastAPI)
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import pandas as pd
+import pickle
+import uvicorn
+
+app = FastAPI(title="Credit Scoring API", description="API pour prédire si un client est bon ou mauvais payeur", version="1.0")
+
+# Charger le modèle LightGBM entraîné
+with open("lightgbm_model.pkl", "rb") as f:
+    model = pickle.load(f)
+
+# Définir le format des données attendues
+class ClientData(BaseModel):
+    data: dict
+
+@app.post("/predict")
+def predict(client: ClientData):
+    try:
+        df = pd.DataFrame([client.data])
+        prediction = model.predict(df)[0]
+        prediction_proba = model.predict_proba(df)[0][1]  # proba d'être un bon client
+        return {
+            "prediction": int(prediction),
+            "proba_good_client": round(float(prediction_proba), 4)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Lancement local : uvicorn main:app --reload
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
