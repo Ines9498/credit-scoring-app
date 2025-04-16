@@ -33,10 +33,11 @@ if uploaded_file is not None:
     st.subheader("🧾 Données du client")
     st.write(client_data)
 
-    # Appel à l'API
+    # Appel à l'API Render
     if st.button("🔍 Prédire"):  
         payload = {"data": client_data.iloc[0].to_dict()}
-        response = requests.post("http://127.0.0.1:8000/predict", json=payload)
+        API_URL = "https://credit-scoring-app-jbzr.onrender.com/predict"
+        response = requests.post(API_URL, json=payload)
 
         if response.status_code == 200:
             result = response.json()
@@ -51,7 +52,6 @@ if uploaded_file is not None:
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(client_data)
 
-            # Gestion du cas où shap_values est une liste ou un tableau unique
             values = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
             base_value = explainer.expected_value[1] if isinstance(explainer.expected_value, list) else explainer.expected_value
 
